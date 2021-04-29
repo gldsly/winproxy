@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Windows Port Proxy</title>
+    <link rel="stylesheet" href="//unpkg.com/layui@2.6.5/dist/css/layui.css">
+    <style type="text/css">
+        . {
+            margin: 8px;
+        }
+
+        .layui-table th {
+            text-align: center;
+        }
+
+        .layui-table td {
+            text-align: center;
+        }
+
+        .layui-input {
+            margin-bottom: 10px;
+        }
+
+        .page_title {
+            margin-bottom: 25px;
+        }
+
+        .proxy_info {
+            margin-top: 25px;
+        }
+
+    </style>
+</head>
+<body>
+<script src="//unpkg.com/layui@2.6.5/dist/layui.js"></script>
+<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+
+<h1 class="page_title">Windows Port Proxy Manager</h1>
+
+<div>
+    <input id="l_addr" value="0.0.0.0" type="text" name="title" required lay-verify="required" placeholder="请输入监听地址" autocomplete="off"
+           class="layui-input">
+    <input id="l_port" type="text" name="title" required lay-verify="required" placeholder="请输入监听端口" autocomplete="off"
+           class="layui-input">
+    <input id="t_addr" type="text" name="title" required lay-verify="required" placeholder="请输入转发地址" autocomplete="off"
+           class="layui-input">
+    <input id="t_port" type="text" name="title" required lay-verify="required" placeholder="请输入转发端口" autocomplete="off"
+           class="layui-input">
+</div>
+
+<div>
+    <button id="add_proxy" class="layui-btn layui-btn-fluid layui-btn-normal">Add Proxy</button>
+</div>
+
+<h2 class="proxy_info">Proxy:</h2>
+<table class="layui-table" lay-size="lg">
+    <colgroup>
+        <col width="150">
+        <col width="200">
+        <col>
+    </colgroup>
+    <thead>
+    <tr>
+        <th>Index</th>
+        <th>ListenAddr</th>
+        <th>ListenPort</th>
+        <th>TargetAddr</th>
+        <th>TargetPort</th>
+        <th>Option</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{ range $i, $v := .data }}
+    <tr id="{{ $i }}">
+        <td>{{ $i }}</td>
+        <td>{{ $v.ListenAddr }}</td>
+        <td>{{ $v.ListenPort }}</td>
+        <td>{{ $v.TargetAddr }}</td>
+        <td>{{ $v.TargetPort }}</td>
+        <td>
+            <button class="layui-btn layui-btn-danger delete_proxy">Delete</button>
+        </td>
+    </tr>
+    {{ end }}
+    </tbody>
+</table>
+</body>
+<script>
+
+    function messageBox(content) {
+        layer.open({
+            title: '提示',
+            content: content,
+            time: 3000,
+            anim: 6,
+            shadeClose: true,
+        });
+    }
+
+    function msgBox(content) {
+        layer.open({
+            title: '提示',
+            content: content,
+            time: 2000,
+            anim: 0,
+            shadeClose: true,
+            end: function () {
+                location.reload()
+            }
+        });
+    }
+
+    function create_proxy() {
+        let l_addr = $("#l_addr").val().trim();
+        let l_port = $("#l_port").val().trim();
+        let t_addr = $("#t_addr").val().trim();
+        let t_port = $("#t_port").val().trim();
+
+        if (l_addr == "") {
+            messageBox("缺少监听地址")
+            return
+        } else if (l_port == "") {
+            messageBox("缺少监听端口")
+            return
+        } else if (t_addr == "") {
+            messageBox("缺少目标地址")
+            return
+        } else if (t_port == "") {
+            messageBox("缺少目标端口")
+            return
+        }
+
+        let data = {
+            "l_addr": l_addr,
+            "l_port": l_port,
+            "t_addr": t_addr,
+            "t_port": t_port,
+        }
+
+        $.ajax({
+            type: 'POST',
+            contentType:"application/json",
+            dataType:"json",
+            url: "/create",
+            data: JSON.stringify(data),
+            success: function (result) {
+                msgBox(result.msg);
+
+            },
+            error: function (result) {
+                messageBox(result.responseJSON.msg);
+            }
+        });
+
+    }
+
+    $("#add_proxy").click(create_proxy);
+
+    function delete_proxy() {
+
+        let t_port = $(".delete_proxy").parent().prev().html()
+        let t_addr = $(".delete_proxy").parent().prev().prev().html()
+        let l_port = $(".delete_proxy").parent().prev().prev().prev().html()
+        let l_addr = $(".delete_proxy").parent().prev().prev().prev().prev().html()
+
+        let data = {
+            "l_addr": l_addr,
+            "l_port": l_port,
+            "t_addr": t_addr,
+            "t_port": t_port,
+        }
+
+        $.ajax({
+            type: 'POST',
+            contentType:"application/json",
+            dataType:"json",
+            url: "/delete",
+            data: JSON.stringify(data),
+            success: function (result) {
+                msgBox(result.msg);
+            },
+            error: function (result) {
+                messageBox(result.responseJSON.msg);
+            }
+        });
+    }
+
+    $(".delete_proxy").click(delete_proxy);
+
+</script>
+</html>
