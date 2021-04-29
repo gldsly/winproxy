@@ -4,7 +4,8 @@ import (
 	"embed"
 	"github.com/gin-gonic/gin"
 	"html/template"
-	"log"
+	"io/ioutil"
+	"net/http"
 )
 
 type resp struct {
@@ -92,14 +93,22 @@ func Create(c *gin.Context) {
 }
 //go:embed template
 var tmpl embed.FS
+
+//go:embed static
+var static embed.FS
+
 func StartService() {
 	templateFile, _ := template.ParseFS(tmpl, "template/*")
 	gin.SetMode(gin.ReleaseMode)
 	gin.DisableConsoleColor()
 	engine := gin.Default()
 	engine.SetHTMLTemplate(templateFile)
+	engine.StaticFS("/static", http.FS(static))
 	engine.GET("/", Index)
 	engine.POST("/delete", Delete)
 	engine.POST("/create", Create)
-	log.Fatalln(engine.Run("127.0.0.1:57391"))
+	err := engine.Run("127.0.0.1:57391")
+	if err != nil {
+		ioutil.WriteFile("err.log", []byte(err.Error()), 0644)
+	}
 }
